@@ -1,10 +1,62 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/google-map/google-map.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-app.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-auth.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-query.html">
+
 <dom-module id="my-map">
   <template>
     <style>
       :host {
         display: block;
       }
+
+      google-map {
+        height: 100%;
+      }
     </style>
+
+    <firebase-app
+      name="foo"
+      api-key="AIzaSyDMRSBYIJRexb7qlH5tCHnG75WV8rG-DBQ"
+      auth-domain="system-status-13c93.firebaseapp.com"
+      database-url="https://system-status-13c93.firebaseio.com"
+      storage-bucket="system-status-13c93.appspot.com">
+    </firebase-app>
+
+    <firebase-auth id="auth" user="{{user}}" signed-in="{{signedIn}}"></firebase-auth>
+
+    <firebase-query
+        id="query"
+        path="/locations/[[user.uid]]"
+        data="{{locations}}">
+    </firebase-query>
+
+    <google-map api-key="AIzaSyDMRSBYIJRexb7qlH5tCHnG75WV8rG-DBQ">
+
+      <template is="dom-repeat" items="[[locations]]" as="location">
+
+        <google-map-marker longitude="[[location.lon]]" latitude="[[location.lat]]"></google-map-marker>
+
+      </template>
+
+    </google-map>
+
+    <paper-dialog modal opened="[[!signedIn]]">
+      <h2>Sign In</h2>
+
+      <paper-input label="Email" type="email" value="{{email}}"></paper-input>
+
+      <paper-input label="Password" type="password" value="{{password}}"></paper-input>
+
+      <div class="buttons">
+        <paper-button raised on-tap="signIn">Sign In</paper-button>
+      </div>
+
+    </paper-dialog>
 
   </template>
   <script>
@@ -12,7 +64,49 @@
     'use strict';
 
     Polymer({
-      is: 'my-map'
+
+      is: 'my-map',
+
+      properties: {
+        user: {
+          type: Object,
+        },
+
+        locations: {
+          type: Array
+        },
+
+        signedIn: {
+          type: Boolean,
+          observer: '_signedInChanged',
+          value: false
+        },
+
+        email: {
+          type: String,
+          value: ''
+        },
+
+        password: {
+          type: String,
+          value: ''
+        }
+      },
+
+      _signedInChanged: function (signedIn) {
+        if (!signedIn) {
+          this.email = '';
+          this.password = '';
+        }
+      },
+
+      signIn: function () {
+        this.$.auth.appName = '';
+        this.$.auth.appName = 'foo';
+        this.$.auth.signInWithEmailAndPassword(this.email, this.password)
+        .catch((err) => console.warn(err.toString()));
+      }
+
     });
 
   })();
